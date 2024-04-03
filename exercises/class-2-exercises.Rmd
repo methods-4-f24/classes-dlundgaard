@@ -46,7 +46,7 @@ How much posterior probability lies below p = 0.2?
 
 ```{r}
 
-sum(samples < 0.2) / 10000
+sprintf("%.2f%%", 100 * sum(samples < 0.2) / 10000)
 
 ```
 
@@ -56,8 +56,7 @@ How much posterior probability lies above p = 0.8?
 
 ```{r}
 
-sum(samples > 0.8) / 10000
-
+sprintf("%.2f%%", 100 * sum(samples > 0.8) / 10000)
 
 ```
 
@@ -67,7 +66,7 @@ How much posterior probability lies above p = 0.2 and p = 0.8?
 
 ```{r}
 
-sum(samples > 0.2 & samples < 0.8) / 10000
+sprintf("%.2f%%", 100 * sum(samples > 0.2 & samples < 0.8) / 10000)
 
 ```
 
@@ -103,7 +102,7 @@ HPDI(samples, prob = 0.66)
 
 #### 3E7. 
 
-Which values of p contain the 66% of the posterior probability, assuming equal posterior probability both below and above the interval?
+Which values of p contain the central 66% of the posterior probability (i.e. assuming equal posterior probability both below and above the interval)?
 
 ```{r}
 
@@ -117,11 +116,10 @@ Section **3.3** of this Chapter is, imo, the most important one. Simulating pred
 
 ```{r}
 # First, play around with this function. What does it do? What does the output mean?
-rbinom(1, size = 9, prob = 0.7)
+# rbinom(3, size = 9, prob = 0.7)
 
 # Now let's scale it up.
-dummy_w = rbinom(1e4, size = 9, prob = 0.1)
-simplehist(dummy_w)
+simplehist(rbinom(1e4, size = 9, prob = 0.7))
 
 # What happens if we increase the size?
 # What about probability?
@@ -130,8 +128,7 @@ simplehist(dummy_w)
 Now let's do a posterior predictive check. Take a minute to contemplate what are we doing here. How does the resulting distribution compare to our sampled posterior?
 
 ```{r}
-w = rbinom(1e4, size = 9, prob = samples)
-simplehist(w)
+simplehist(rbinom(1e4, size = 9, prob = samples))
 
 # Compare to sampled posterior here - choose one of the summarization methods above! Is it more or less conservative?
 ```
@@ -160,9 +157,7 @@ dens(samples)
 ```
 
 ```{r}
-
-# Your code here.
-
+HPDI(samples, prob = 0.9)
 ```
 
 #### 3M3.
@@ -170,9 +165,12 @@ dens(samples)
 Construct a posterior predictive check for this model and data. This means simulate the distribution of samples, averaging over the posterior uncertainty in p. What is the probability of observing 8 water in 15 tosses?
 
 ```{r}
+draws <- rbinom(1e4, 15, prob = samples)
+simplehist(draws)
+```
 
-# Your code here.
-
+```{r}
+sum(draws == 8) / 1e4
 ```
 
 #### 3M4. 
@@ -180,9 +178,7 @@ Construct a posterior predictive check for this model and data. This means simul
 Using the posterior distribution constructed from the new (8/15) data, now calculate the probability of observing 6 water in 9 tosses.
 
 ```{r}
-
-# Your code here.
-
+sum(rbinom(1e4, 9, prob = samples) == 6) / 1e4
 ```
 
 #### 3M5.
@@ -190,8 +186,6 @@ Using the posterior distribution constructed from the new (8/15) data, now calcu
 Start over at 3M1, but now use a prior that is zero below p=0.5 and a constant above p=0.5. This corresponds to prior information that a majority of the Earth’s surface is water. Repeat each problem above and compare the inferences. What difference does the better prior make? If it helps, compare inferences (using both priors) to the true value p = 0.7.
 
 ```{r}
-
-# Your code here.
 
 ```
 
