@@ -8,10 +8,6 @@ date: "13-02-24"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r}
-library(rethinking)
-```
-
 # Exercises for Class 1
 
 ## Supporting code
@@ -21,14 +17,19 @@ Below is code from Chapter 2 of the book that you can use to do the exercises. N
 ```{r}
 # Grid Approximation
 
+resolution <- 100
+
 # define grid
-p_grid = seq(from = 0, to = 1, length.out=20)
+hypotheses = seq(from = 0, to = 1, length.out=resolution)
 
 # define prior
-prior = rep(1, 20)
+# prior = rep(1, resolution)
+prior = c(seq(from = 0, to = 1, length.out=resolution / 2), seq(from = 1, to = 0, length.out=resolution / 2))
+prior = c(rep(0, resolution / 2), seq(from = 1, to = 0, length.out=resolution / 2))
+plot(prior ~ hypotheses, xlim = c(0, 1))
 
 # compute likelihood at each value in grid
-likelihood = dbinom(6, size = 9, prob = p_grid)
+likelihood = dbinom(8, size = 15, prob = hypotheses)
 
 # compute product of likelihood and prior
 unstd.posterior = likelihood * prior
@@ -37,10 +38,9 @@ unstd.posterior = likelihood * prior
 posterior = unstd.posterior / sum(unstd.posterior)
 
 # plot the distribution
-plot(p_grid, posterior, type = "b",
-     xlab = "probability of water", ylab = "posterior_probability")
-mtext("20 points")
-
+# plot(hypotheses, posterior, type = "b", xlab = "probability of water", ylab = "posterior_probability")
+plot(posterior ~ hypotheses, type = "b", xlab = "probability of water", ylab = "posterior_probability")
+title(sprintf("%d hypotheses", resolution))
 ```
 
 ## Exercises
