@@ -85,4 +85,205 @@ d$D <- standardize( d$Divorce )
 
 ```
 
-Feel free to proceed other exercises from Chapter 5 if you have completed the exercises above.
+=======
+---
+title: "class-5-exercises"
+output: html_document
+date: "2024-04-01"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(rethinking)
+library(dagitty)
+
+COLORS = c("#0B666A", "#1DE9B6", "#7F39FB", "#FF9100", "#27005D", "#00E5FF", "#2979FF", "#F50057")
+theme_set(
+  theme_minimal() + 
+  theme(
+    plot.title = element_text(
+      face = "bold", 
+      size = 14,
+      margin = margin(t = 10, r = 0, b = 20, l = 0)
+    ),
+    axis.title.x = element_text(
+      size = 10, 
+      margin = margin(t = 15, r = 0, b = 0, l = 0), 
+      color = "#555555"
+    ),
+    axis.title.y = element_text(
+      size = 10, 
+      margin = margin(t = 0, r = 15, b = 0, l = 0),
+      color = "#555555"
+    )
+  )
+)
+```
+
+Welcome back to your favorite course of all time. This week we start getting into causal inference - arguably the most important part of all of your Methods courses. Why? Because we finally start practicing *doing science*, not just statistics.
+
+The exercises for this week are versions of exercises from Chapter 5, modified to ease you into our next portfolio which we will start on next week.
+
+## Exercises
+
+### Easy.
+
+Do this by discussing the exercises in pairs. No need to code anything. :))
+
+### Medium
+
+Throughout this course, there has been a hard emphasis on clarifying and formalizing your assumptions about the world in your statistical models. Up until now we have been doing it in a form of priors for our parameters. Today we begin formalizing our *causal assumptions* about the *generative model* of the data, in the form of DAGs. 
+
+#### 5M0.
+
+Conceptual question. Let's say you have bought a farm in Vestjylland. The previous owner was a **very** detail oriented and meticulous farmer and has logged all of the relevant data, such as soil moisture and air temperature for the period of 3 years.
+
+You are far from a good farmer. You only know how to code. In the morning, the televised weather forecast forecasts substantial heat wave for the next 3 days. You don't know what to do, should you water your crops extra, given this new information? You don't trust your common sense, so you throw in all of the data (soil moisture and air temperature) into your machine learning model. The model predicts that soil moisture for the forecasted values of air temperature will be normal. So you decide not to give the soil extra water. Was that a good decision? Why?
+
+#### 5M1.
+
+Invent your own example of a spurious correlation. An outcome variable should be correlated with both predictor variables. But when both predictors are entered in the same model, the correlation between the outcome and one of the predictors should mostly vanish (or at least be greatly reduced). 
+
+See if you can come up with a CogSci-inspired phenomenon. Anxiety? Bliss? Make a DAG and use the *daggity* package to illustrate it. 
+
+>This would be a forking path. 
+
+```{r fig.width = 2}
+# ilustrate your dag
+# What are the conditional independencies of your DAG?
+
+dag.fork <- dagitty('dag{ T <- U -> E }')
+coordinates(dag.fork ) <- list( 
+  x=c(T=0, U=1, E=2) , 
+  y=c(T=1, U=0, E=1) 
+)
+drawdag( dag.fork )
+```
+```{r}
+impliedConditionalIndependencies( dag.fork )
+```
+
+Now see if you can play god and generate the data. This will require you to think even deeper about your variables - what is the scale of each variable and how they interact. Formulate your assumptions in natural language and perhaphs ask ChatGPT to help you with the data simulation process to avoid spending a lot of time looking for the right code. Just make sure that the output matches your desired generative structure. :))
+
+```{r}
+set.seed(420)
+n <- 1000
+U <- rbinom(n, 1, prob = 0.5)
+T <- rnorm(n, mean = 5 * U)
+E <- rnorm(n, mean = 8 * U)
+```
+
+```{r}
+plot(E, T)
+plot(U, E)
+```
+
+```{r}
+cor(E, T)
+cor(E, U)
+```
+
+```{r}
+cor(E[U == 1], T[U == 1])
+cor(E[U == 0], T[U == 0])
+```
+
+
+```{r}
+lm(E ~ T)
+lm(E ~ U)
+lm(E ~ T + U)
+```
+
+#### 5M2.
+
+Invent your own example of a masked relationship. An outcome variable should be correlated with both predictor variables, but in opposite directions. And the two predictor variables should be correlated with one another.
+
+No need to illustrate or code anything here. Just think it up. Try another CogSci related phenomenon.
+
+>An example would be harder tasks taking the same amount of time as easier tasks due to practice effects.
+
+```{r}
+set.seed(69)
+n <- 1000
+question <- sample(seq(1, 50), n, replace = TRUE)
+difficulty <- rnorm(n, question / 5, 4)
+novelty <- rnorm(n, -question / 2, 8)
+response_time <- rnorm(n, 2.5 * difficulty + novelty, 5)
+
+plot(difficulty ~ question)
+plot(novelty ~ question)
+
+plot(response_time ~ question)
+```
+
+```{r}
+cor(difficulty, question)
+cor(novelty, question)
+cor(difficulty, novelty)
+
+cor(response_time, question)
+```
+
+```{r}
+lm(response_time ~ difficulty)
+lm(response_time ~ novelty)
+
+lm(response_time ~ difficulty + novelty)
+```
+
+>I.e. adding both predictors in the same model lead to stronger associations for both than when they were included individually.
+
+#### 5M4.
+
+In the divorce data, States with high numbers of Mormons (members of The Church of Jesus Christ of Latter-day Saints, LDS) have much lower divorce rates than the regression models expected. Find a list of LDS population by State and use those numbers as a predictor variable, predicting divorce rate using marriage rate, median age at marriage, and percent LDS population (possibly stan- dardized). You may want to consider transformations of the raw percent LDS variable.
+
+You don't need to find any data tho, we got you covered.
+
+```{r}
+set.seed(1)
+data(WaffleDivorce)
+
+WaffleDivorce$LDS_proportion <- c(0.75, 4.53, 6.18, 1, 2.01, 2.82, 0.43, 0.55, 0.38,
+  0.75, 0.82, 5.18, 26.35, 0.44, 0.66, 0.87, 1.25, 0.77, 0.64, 0.81,
+  0.72, 0.39, 0.44, 0.58, 0.72, 1.14, 4.78, 1.29, 0.61, 0.37, 3.34,
+  0.41, 0.82, 1.48, 0.52, 1.2, 3.85, 0.4, 0.37, 0.83, 1.27, 0.75,
+  1.21, 67.97, 0.74, 1.13, 3.99, 0.92, 0.44, 11.5 )
+
+
+with(WaffleDivorce, plot(Divorce ~ LDS_proportion, col = COLORS[3]))
+```
+
+```{r}
+WaffleDivorce <- 
+  mutate_at(WaffleDivorce,
+    vars(c(
+      LDS_proportion,
+      MedianAgeMarriage,
+      Marriage,
+      Divorce,
+    )), 
+    list(Z = ~ standardize(.))
+  )
+
+model.divorce.stratified_by_LDS_density <- quap(
+  data = WaffleDivorce,
+  flist = alist(
+    Divorce_Z ~ dnorm(mu, sigma),
+    mu <- a + bMarriage * Marriage_Z + bAge * MedianAgeMarriage_Z + LDS_proportion * bLDS_proportion,
+    a ~ dnorm(0, 0.2),
+    bMarriage ~ dnorm(0, 0.5),
+    bAge ~ dnorm(0, 0.5),
+    bLDS_proportion ~ dnorm(0, 0.5),
+    sigma ~ dgamma(2, 2)
+  )
+)
+
+precis(model.divorce.stratified_by_LDS_density)
+model.divorce.stratified_by_LDS_density %>% plot
+```
+
